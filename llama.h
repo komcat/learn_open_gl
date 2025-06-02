@@ -31,7 +31,7 @@ public:
 
   // Animation control
   void setAnimationSpeed(float speed) { animationSpeed = speed; }
-  void setCurrentFrame(int frame) { currentFrame = frame % 6; } // 6 frames total
+  void setCurrentFrame(int frame) { currentFrame = frame % 24; } // 24 frames total
 
 private:
   float rotation;

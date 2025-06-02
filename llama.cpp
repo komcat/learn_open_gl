@@ -107,22 +107,24 @@ void Llama::update(float deltaTime)
   animationTime += deltaTime;
 
   // Update animation frame (change frame based on animation speed)
-  currentFrame = (int)(animationTime * animationSpeed) % 6; // 6 frames total
+  currentFrame = (int)(animationTime * animationSpeed) % 24; // 24 frames total
 }
 
 void Llama::getFrameCoords(int frame, float coords[8])
 {
-  // Sprite sheet: 96x144, 2x3 grid, each frame 48x48
+  // Sprite sheet: 120x120, 5x5 grid (24 frames total), each frame 24x24
   // Frame layout based on JSON:
-  // 0 | 1    (y=0)
-  // 2 | 3    (y=48) 
-  // 4 | 5    (y=96)
+  // 0  | 1  | 2  | 3  | 4     (y=0)
+  // 5  | 6  | 7  | 8  | 9     (y=24) 
+  // 10 | 11 | 12 | 13 | 14    (y=48)
+  // 15 | 16 | 17 | 18 | 19    (y=72)
+  // 20 | 21 | 22 | 23 | --    (y=96)
 
-  float frameWidth = 48.0f / 96.0f;   // 48/96 = 0.5
-  float frameHeight = 48.0f / 144.0f; // 48/144 = 0.333...
+  float frameWidth = 24.0f / 120.0f;   // 24/120 = 0.2
+  float frameHeight = 24.0f / 120.0f;  // 24/120 = 0.2
 
-  int col = frame % 2;       // 0 or 1
-  int row = frame / 2;       // 0, 1, or 2
+  int col = frame % 5;       // 0, 1, 2, 3, or 4
+  int row = frame / 5;       // 0, 1, 2, 3, or 4
 
   float left = col * frameWidth;
   float right = left + frameWidth;

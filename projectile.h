@@ -4,8 +4,8 @@
 #include <memory>
 #include <random>
 #include <chrono>
-
 class Shader;
+class EnemyManager;
 
 struct Projectile {
   float x, y;          // Position
@@ -38,8 +38,8 @@ public:
   // Update the last shot time (call when actually shooting)
   void updateLastShotTime();
 
-  // Update all projectiles
-  void update(float deltaTime);
+  // Update all projectiles and check collisions
+  void update(float deltaTime, class EnemyManager* enemyManager = nullptr);
 
   // Render all projectiles
   void render(std::shared_ptr<Shader> shader);

@@ -1,6 +1,7 @@
 ﻿#include "projectile.h"
 #include "shader.h"
 #include "texture_loader.h"
+#include "enemy.h"
 #include <glad/glad.h>
 #include <iostream>
 #include <cmath>
@@ -156,28 +157,39 @@ void ProjectileManager::updateLastShotTime()
   lastShotTime = std::chrono::steady_clock::now();
 }
 
-void ProjectileManager::update(float deltaTime)
+void ProjectileManager::update(float deltaTime, EnemyManager* enemyManager)
 {
-  for (auto& proj : projectiles)
+  for (auto it = projectiles.begin(); it != projectiles.end();)
   {
+    auto& proj = *it;
+
     proj.x += proj.velX * deltaTime;
     proj.y += proj.velY * deltaTime;
     proj.life += deltaTime;
 
     // Update animation frame (change frame every 0.1 seconds)
     proj.frame = (int)(proj.life * 10.0f) % 4; // 4 frames, cycle every 0.4 seconds
-  }
 
-  // Remove projectiles that are off-screen or too old
-  projectiles.erase(
-    std::remove_if(projectiles.begin(), projectiles.end(),
-      [](const Projectile& p) {
-    return p.x < -2.0f || p.x > 2.0f ||
-      p.y < -2.0f || p.y > 2.0f ||
-      p.life > 5.0f; // Remove after 5 seconds
-  }),
-    projectiles.end()
-  );
+    // Check collision with enemies if enemy manager is provided
+    bool hitEnemy = false;
+    if (enemyManager)
+    {
+      hitEnemy = enemyManager->checkProjectileCollisions(proj.x, proj.y, 0.08f);
+    }
+
+    // Remove projectiles that hit enemies, are off-screen, or too old
+    if (hitEnemy ||
+      proj.x < -5.0f || proj.x > 5.0f ||
+      proj.y < -5.0f || proj.y > 5.0f ||
+      proj.life > 5.0f)
+    {
+      it = projectiles.erase(it);
+    }
+    else
+    {
+      ++it;
+    }
+  }
 }
 
 void ProjectileManager::getFrameCoords(int frame, float coords[8])

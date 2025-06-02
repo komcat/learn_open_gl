@@ -18,7 +18,7 @@ public:
   void setInt(const std::string& name, int value) const;
   void setFloat(const std::string& name, float value) const;
   void setMatrix4fv(const std::string& name, const float* matrix) const;
-
+  void setViewMatrix(const float* viewMatrix) const;
   // Cleanup
   ~Shader();
 

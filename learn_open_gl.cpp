@@ -6,6 +6,8 @@
 #include "shader.h"
 #include "llama.h"
 #include "projectile.h"
+#include "enemy.h"
+#include "camera.h"
 
 #include <cmath>
 #include <chrono>
@@ -24,8 +26,11 @@ int windowWidth = 800, windowHeight = 600;
 // Game objects
 std::unique_ptr<Llama> llama;
 std::unique_ptr<ProjectileManager> projectileManager;
+std::unique_ptr<EnemyManager> enemyManager;
+std::unique_ptr<Camera> camera;
 std::shared_ptr<Shader> llamaShader;
 std::shared_ptr<Shader> projectileShader;
+std::shared_ptr<Shader> enemyShader;
 
 // Mouse callback
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -52,11 +57,9 @@ void processInput(GLFWwindow* window)
 // Calculate angle from llama to mouse cursor
 float calculateLlamaAngle()
 {
-  float centerX = windowWidth / 2.0f;
-  float centerY = windowHeight / 2.0f;
-  float deltaX = (float)mouseX - centerX;
-  float deltaY = centerY - (float)mouseY;
-  return -(atan2(deltaX, deltaY) - M_PI / 2.0f);
+  float worldX, worldY;
+  camera->screenToWorld((float)mouseX, (float)mouseY, windowWidth, windowHeight, worldX, worldY);
+  return -(atan2(worldX, worldY) - M_PI / 2.0f);
 }
 
 // Initialize game objects
@@ -71,10 +74,11 @@ layout (location = 1) in vec2 aTexCoord;
 out vec2 TexCoord;
 
 uniform mat4 transform;
+uniform mat4 view;
 
 void main()
 {
-    gl_Position = transform * vec4(aPos, 1.0);
+    gl_Position = view * transform * vec4(aPos, 1.0);
     TexCoord = aTexCoord;
 }
 )";
@@ -100,10 +104,11 @@ layout (location = 1) in vec2 aTexCoord;
 out vec2 TexCoord;
 
 uniform mat4 transform;
+uniform mat4 view;
 
 void main()
 {
-    gl_Position = transform * vec4(aPos, 1.0);
+    gl_Position = view * transform * vec4(aPos, 1.0);
     TexCoord = aTexCoord;
 }
 )";
@@ -124,10 +129,13 @@ void main()
   // Create shaders
   llamaShader = std::make_shared<Shader>(llamaVertexShader, llamaFragmentShader);
   projectileShader = std::make_shared<Shader>(projectileVertexShader, projectileFragmentShader);
+  enemyShader = std::make_shared<Shader>(llamaVertexShader, llamaFragmentShader); // Reuse same shader
 
   // Create game objects
   llama = std::make_unique<Llama>();
   projectileManager = std::make_unique<ProjectileManager>();
+  enemyManager = std::make_unique<EnemyManager>();
+  camera = std::make_unique<Camera>();
 
   // Initialize llama
   if (!llama->initialize("assets/llama.png"))
@@ -150,6 +158,24 @@ void main()
       return false;
     }
   }
+
+  // Initialize enemy manager
+  if (!enemyManager->initialize("assets/DinoSprites_tard.png"))
+  {
+    // Try alternative path
+    if (!enemyManager->initialize("DinoSprites_tard.png"))
+    {
+      std::cout << "Failed to initialize enemy manager!" << std::endl;
+      return false;
+    }
+  }
+
+  // Configure enemy spawning (expand spawn area for larger view)
+  enemyManager->setMaxEnemies(5000);
+  enemyManager->setSpawnRate(5.0f); // 0.5 enemies per second
+
+  // Set camera zoom for better field of view
+  camera->setZoom(2.5f); // 2.5x zoom out to see more area
 
   return true;
 }
@@ -223,18 +249,38 @@ int main()
       projectileManager->updateLastShotTime();
     }
 
-    // Update projectiles
-    projectileManager->update(deltaTime);
+    // Update projectiles with enemy collision detection
+    projectileManager->update(deltaTime, enemyManager.get());
+
+    // Update enemies
+    enemyManager->update(deltaTime);
 
     // Clear screen
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    // Create and set view matrix for all shaders
+    float viewMatrix[16];
+    camera->createViewMatrix(viewMatrix);
+
+    // Set view matrix for all shaders
+    llamaShader->use();
+    llamaShader->setViewMatrix(viewMatrix);
+
+    projectileShader->use();
+    projectileShader->setViewMatrix(viewMatrix);
+
+    enemyShader->use();
+    enemyShader->setViewMatrix(viewMatrix);
 
     // Render llama
     llama->render(llamaShader);
 
     // Render projectiles
     projectileManager->render(projectileShader);
+
+    // Render enemies
+    enemyManager->render(enemyShader);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
