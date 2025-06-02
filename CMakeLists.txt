@@ -26,7 +26,7 @@ add_subdirectory(thirdparty/glfw)
 # Create GLAD library
 add_library(glad STATIC
     thirdparty/glad/src/glad.c
- "stb_image.h")
+ "stb_image.h" "shader.h" "shader.cpp" "projectile.h" "projectile.cpp" "llama.h" "llama.cpp" "texture_loader.h" "texture_loader.cpp")
 
 # GLAD include directories
 target_include_directories(glad PUBLIC
@@ -37,7 +37,7 @@ target_include_directories(glad PUBLIC
 find_package(OpenGL REQUIRED)
 
 # Add source to this project's executable
-add_executable(learn_open_gl "learn_open_gl.cpp" "learn_open_gl.h" "stb_image.h")
+add_executable(learn_open_gl "learn_open_gl.cpp" "learn_open_gl.h" "stb_image.h" "shader.h" "shader.cpp" "projectile.h" "projectile.cpp" "llama.h" "llama.cpp" "texture_loader.h" "texture_loader.cpp")
 
 # Link libraries
 target_link_libraries(learn_open_gl 
